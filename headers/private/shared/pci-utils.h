@@ -7,6 +7,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 static void
 get_class_info(uint8 pci_class_base_id, uint8 pci_class_sub_id, uint8 pci_class_api_id, char *classInfo, size_t size)

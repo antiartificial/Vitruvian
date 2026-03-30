@@ -9,6 +9,7 @@
 
 #include <MergedDirectory.h>
 
+#include <cstring>
 #include <new>
 #include <set>
 #include <string>

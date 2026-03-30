@@ -10,6 +10,8 @@
 //! Methods to initialize and get the system color_map.	
 
 
+#include <cstring>
+
 #include <GraphicsDefs.h>
 #include <InterfaceDefs.h>
 

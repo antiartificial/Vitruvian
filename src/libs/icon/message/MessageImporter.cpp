@@ -10,6 +10,7 @@
 
 #include "MessageImporter.h"
 
+#include <cstring>
 #include <new>
 #include <stdio.h>
 

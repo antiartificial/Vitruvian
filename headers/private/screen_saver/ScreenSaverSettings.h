@@ -6,6 +6,7 @@
 #define SCREEN_SAVER_SETTINGS_H
 
 
+#include <cstring>
 #include <Message.h>
 #include <Path.h>
 #include <String.h>

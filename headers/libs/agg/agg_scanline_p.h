@@ -27,6 +27,7 @@
 #ifndef AGG_SCANLINE_P_INCLUDED
 #define AGG_SCANLINE_P_INCLUDED
 
+#include <cstring>
 #include "agg_array.h"
 
 namespace agg

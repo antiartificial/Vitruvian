@@ -17,6 +17,7 @@
 //
 //----------------------------------------------------------------------------
 #include <string.h>
+#include <cstring>
 #include <stdio.h>
 #include "agg_gsv_text.h"
 

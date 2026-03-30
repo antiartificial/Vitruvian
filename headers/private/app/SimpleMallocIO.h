@@ -11,6 +11,7 @@
 #ifndef _SIMPLE_MALLOC_IO_H_
 #define _SIMPLE_MALLOC_IO_H_
 
+#include <cstring>
 #include <malloc.h>
 
 namespace BPrivate {

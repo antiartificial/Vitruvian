@@ -7,6 +7,7 @@
  */
 
 
+#include <cstring>
 #include <new>
 #include <set>
 #include <stdlib.h>

@@ -14,6 +14,7 @@
 //----------------------------------------------------------------------------
 
 
+#include <cstring>
 #include <stdio.h>
 #include "agg_font_freetype.h"
 #include "agg_bitset_iterator.h"

@@ -10,6 +10,7 @@
 #include "IconRenderer.h"
 
 #include <algorithm>
+#include <cstring>
 #include <new>
 #include <stdio.h>
 

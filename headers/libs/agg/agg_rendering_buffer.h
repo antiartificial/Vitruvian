@@ -20,6 +20,7 @@
 #ifndef AGG_RENDERING_BUFFER_INCLUDED
 #define AGG_RENDERING_BUFFER_INCLUDED
 
+#include <cstring>
 #include "agg_array.h"
 
 namespace agg
