@@ -67,8 +67,8 @@ macro( Application name )
 		message( FATAL_ERROR "APPLICATION: 'SOURCES' argument required." )
 	endif()
 
-	list (INSERT _APPLICATION_LIBS 0 be)
 	list (INSERT _APPLICATION_LIBS 0 root)
+	list (INSERT _APPLICATION_LIBS 0 be)
 	target_link_libraries(${name} PUBLIC ${_APPLICATION_LIBS})
 
 	# Add current dir headers
@@ -92,8 +92,8 @@ macro( Server name )
 
 	add_executable(${name} ${_SERVER_SOURCES})
 
-	list (INSERT _SERVER_LIBS 0 be)
 	list (INSERT _SERVER_LIBS 0 root)
+	list (INSERT _SERVER_LIBS 0 be)
 	target_link_libraries(${name} PUBLIC ${_SERVER_LIBS})
 
 	list (APPEND _SERVER_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR})
@@ -147,8 +147,8 @@ macro( Test name )
 		message( FATAL_ERROR "TEST: 'SOURCES' argument required." )
 	endif()
 
-	list (INSERT _TEST_LIBS 0 be)
 	list (INSERT _TEST_LIBS 0 root)
+	list (INSERT _TEST_LIBS 0 be)
 	target_link_libraries(${name} PUBLIC ${_TEST_LIBS})
 
 	# Add current dir headers

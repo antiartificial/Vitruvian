@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 
 project(VOS VERSION 0.3.0 LANGUAGES CXX C)
 
+# libbe.so has undefined _kern_* symbols that are satisfied at runtime by
+# libroot.so.  Without this flag, --export-dynamic on binaries like
+# input_server causes the linker to reject libbe.so at link time.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	add_link_options(-Wl,--allow-shlib-undefined)
+endif()
+
+
 # TODO shouldn't we resolve an absolute path here? it kind of works
 # only if buildtools is in the project source dir, which...we don't
 # really want to constrain.

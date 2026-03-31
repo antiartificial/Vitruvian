@@ -1,11 +1,4 @@
 target_sources(root PRIVATE
-	Team.cpp
-
-	thread.cpp
-	port.cpp
-	sem.cpp
-	area.cpp
-
 	byteorder.cpp
 	debug.cpp
 	driver_settings.cpp
@@ -22,8 +15,6 @@ target_sources(root PRIVATE
 	KMessage.cpp
 
 	fs/fs.cpp
-	fs/vref.cpp
-	fs/node_monitor.cpp
 	fs/disk_monitor.cpp
 	fs/disk_device.cpp
 	fs/fs_info.cpp
@@ -55,7 +46,24 @@ target_sources(root PRIVATE
 	posix/strndup.c
 )
 
-add_dependencies(root nexus)
+if(NOT TARGET nexus)
+	target_sources(root PRIVATE nexus_stubs.cpp)
+endif()
+
+if(TARGET nexus)
+	target_sources(root PRIVATE
+		Team.cpp
+
+		thread.cpp
+		port.cpp
+		sem.cpp
+		area.cpp
+
+		fs/vref.cpp
+		fs/node_monitor.cpp
+	)
+	add_dependencies(root nexus)
+endif()
 
 target_include_directories(root PRIVATE
 	"./"
