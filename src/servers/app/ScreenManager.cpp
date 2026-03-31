@@ -32,6 +32,9 @@ using std::nothrow;
 //#	include "SDLInterface.h"
 #	include "DrmHWInterface.h"
 #	include "FBDevHWInterface.h"
+#	if HAVE_GBM
+#		include "GBMHWInterface.h"
+#	endif
 #endif
 #else
  #	include "ViewHWInterface.h"
@@ -216,9 +219,12 @@ ScreenManager::_ScanDrivers()
 	#ifndef __VOS__
 		interface = new AccelerantHWInterface();
 	#else
-		//interface = new SDLInterface();
-		interface = new DrmHWInterface();
-//		interface = new FBDevHWInterface();
+	#if HAVE_GBM
+		if (GBMHWInterface::IsAvailable())
+			interface = new GBMHWInterface();
+		else
+	#endif
+			interface = new DrmHWInterface();
 	#endif
 
 		_AddHWInterface(interface);
