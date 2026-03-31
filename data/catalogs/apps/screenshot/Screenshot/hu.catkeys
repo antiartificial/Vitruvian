@@ -1,30 +1,30 @@
-1	hungarian	x-vnd.haiku-screenshot	3900035709
-Include window border	ScreenshotWindow		Az ablak keretének belefoglalása a képbe
-Overwrite	ScreenshotWindow		Felülírás
+1	hungarian	x-vnd.haiku-screenshot-cli	3900035709
+Include window border	ScreenshotWindow		Az ablak keretét is
+Overwrite	ScreenshotWindow		Írja felül
 Save in:	ScreenshotWindow		Mentés ide:
-Error saving \"%s\":\n\t%s	ScreenshotWindow		Mentési hiba \"%s\":\n\t%s
-This file already exists.\n Are you sure you would like to overwrite it?	ScreenshotWindow		A fájl már létezik.\nBiztosan felül akarod írni?
+Error saving \"%s\":\n\t%s	ScreenshotWindow		Nem tudtam menteni: \"%s\":\n\t%s
+This file already exists.\n Are you sure you would like to overwrite it?	ScreenshotWindow		A fájl már létezik.\nBiztosan felülírod?
 OK	ScreenshotWindow		Rendben
-The destination path exists but is not a folder.	ScreenshotWindow		A megadott útvonal létezik, de nem mappa.
+The destination path exists but is not a folder.	ScreenshotWindow		A cél létezik, de az nem mappa.
 Select	ScreenshotWindow		Kiválasztás
-Save as:	ScreenshotWindow		Formátum:
+Save as:	ScreenshotWindow		Mentés mint:
 seconds	ScreenshotWindow		másodperc
 New screenshot	ScreenshotWindow		Új képernyőkép
 Screenshot	System name		Képernyőkép
 Desktop	ScreenshotWindow		Asztal
-Artwork folder	ScreenshotWindow		Artwork mappa
-Translator Settings	ScreenshotWindow		Beállítások
-Include mouse pointer	ScreenshotWindow		Az egérkurzor belefoglalása a képbe
+Artwork folder	ScreenshotWindow		Művész-mappa
+Translator Settings	ScreenshotWindow		Értelmező beállításai
+Include mouse pointer	ScreenshotWindow		Az egér kurzort is
 Selected area	ScreenshotWindow		Kijelölt terület
-overwrite	ScreenshotWindow		felülírás
+overwrite	ScreenshotWindow		felülír
 Settings…	ScreenshotWindow		Beállítások…
 Select area	ScreenshotWindow		Terület kijelölése
-Choose folder	ScreenshotWindow		Mappa kiválasztása
+Choose folder	ScreenshotWindow		Mappa választása
 Name:	ScreenshotWindow		Név:
 Active window	ScreenshotWindow		Aktív ablak
-Choose folder…	ScreenshotWindow		Mappa kiválasztása…
+Choose folder…	ScreenshotWindow		Mappa választása…
 Please select	ScreenshotWindow		Kérlek válassz
-Failed to save screenshot	ScreenshotWindow		Nem sikerült a képernyőkép mentése.
+Failed to save screenshot	ScreenshotWindow		Nem sikerült a képernyőkép mentése
 Cancel	ScreenshotWindow		Mégse
 Whole screen	ScreenshotWindow		Teljes képernyő
 Delay:	ScreenshotWindow		Késleltetés:

@@ -1,4 +1,4 @@
-1	german	x-vnd.haiku-screenshot	3900035709
+1	german	x-vnd.haiku-screenshot-cli	3900035709
 Include window border	ScreenshotWindow		Inklusive Fensterrahmen
 Overwrite	ScreenshotWindow		Überschreiben
 Save in:	ScreenshotWindow		Speichern in:
@@ -29,6 +29,6 @@ Cancel	ScreenshotWindow		Abbrechen
 Whole screen	ScreenshotWindow		Ganzer Bildschirm
 Delay:	ScreenshotWindow		Verzögerung:
 Copy to clipboard	ScreenshotWindow		In Ablage kopieren
-screenshot	Screenshot	Base filename of screenshot files	Screenshot
+screenshot	Screenshot	Base filename of screenshot files	screenshot
 Home folder	ScreenshotWindow		Home-Ordner
 Save	ScreenshotWindow		Speichern

@@ -1,4 +1,4 @@
-1	bokmål, norwegian; norwegian bokmål	x-vnd.haiku-screenshot	3900035709
+1	bokmål, norwegian; norwegian bokmål	x-vnd.haiku-screenshot-cli	3900035709
 Include window border	ScreenshotWindow		Inkluder vinduskant
 Overwrite	ScreenshotWindow		Overskriv
 Save in:	ScreenshotWindow		Lagre i:
@@ -9,15 +9,15 @@ The destination path exists but is not a folder.	ScreenshotWindow		Målet finnes
 Select	ScreenshotWindow		Velg
 Save as:	ScreenshotWindow		Lagre som:
 seconds	ScreenshotWindow		sekunder
-New screenshot	ScreenshotWindow		Ny skjermdump
-Screenshot	System name		Skjermdump
+New screenshot	ScreenshotWindow		Nytt skjermbilde
+Screenshot	System name		Skjermbilde
 Desktop	ScreenshotWindow		Skrivebord
 Artwork folder	ScreenshotWindow		Bildemappe
-Translator Settings	ScreenshotWindow		Oversettingsinnstillinger
+Translator Settings	ScreenshotWindow		Oversetterinnstillinger
 Include mouse pointer	ScreenshotWindow		Inkluder musepeker
 Selected area	ScreenshotWindow		Valgt område
 overwrite	ScreenshotWindow		overskriv
-Settings…	ScreenshotWindow		Innstillinger
+Settings…	ScreenshotWindow		Innstillinger…
 Select area	ScreenshotWindow		Velg område
 Choose folder	ScreenshotWindow		Velg mappe
 Name:	ScreenshotWindow		Navn:

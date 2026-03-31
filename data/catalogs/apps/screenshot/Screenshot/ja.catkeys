@@ -1,20 +1,20 @@
-1	japanese	x-vnd.haiku-screenshot	3900035709
-Include window border	ScreenshotWindow		ウィンドウ境界線も取り込む
+1	japanese	x-vnd.haiku-screenshot-cli	3900035709
+Include window border	ScreenshotWindow		ウィンドウの枠を含める
 Overwrite	ScreenshotWindow		上書き
-Save in:	ScreenshotWindow		保存場所:
-Error saving \"%s\":\n\t%s	ScreenshotWindow		\"%s\" の保存時にエラーが発生しました:\n\t%s
-This file already exists.\n Are you sure you would like to overwrite it?	ScreenshotWindow		このファイルはすでに存在します。\n本当に上書きしたいですか?
+Save in:	ScreenshotWindow		次へ保存:
+Error saving \"%s\":\n\t%s	ScreenshotWindow		\"%s\" を保存中にエラー:\n\t%s
+This file already exists.\n Are you sure you would like to overwrite it?	ScreenshotWindow		このファイルはすでに存在します。\n 本当に上書きしますか?
 OK	ScreenshotWindow		OK
-The destination path exists but is not a folder.	ScreenshotWindow		保存先のパスはフォルダーではありません。
+The destination path exists but is not a folder.	ScreenshotWindow		保存先のパスは存在しますがフォルダーではありません。
 Select	ScreenshotWindow		選択
-Save as:	ScreenshotWindow		ファイル形式:
+Save as:	ScreenshotWindow		名前を付けて保存:
 seconds	ScreenshotWindow		秒
 New screenshot	ScreenshotWindow		新しいスクリーンショット
 Screenshot	System name		スクリーンショット
 Desktop	ScreenshotWindow		デスクトップ
-Artwork folder	ScreenshotWindow		アートワークフォルダー
-Translator Settings	ScreenshotWindow		Translator 設定
-Include mouse pointer	ScreenshotWindow		マウスポインターも取り込む
+Artwork folder	ScreenshotWindow		Artwork フォルダー
+Translator Settings	ScreenshotWindow		トランスレーター設定
+Include mouse pointer	ScreenshotWindow		マウスポインターを含める
 Selected area	ScreenshotWindow		選択範囲
 overwrite	ScreenshotWindow		上書き
 Settings…	ScreenshotWindow		設定...
@@ -25,10 +25,10 @@ Active window	ScreenshotWindow		アクティブウィンドウ
 Choose folder…	ScreenshotWindow		フォルダーの選択...
 Please select	ScreenshotWindow		選択してください
 Failed to save screenshot	ScreenshotWindow		スクリーンショットの保存に失敗しました
-Cancel	ScreenshotWindow		中止
+Cancel	ScreenshotWindow		キャンセル
 Whole screen	ScreenshotWindow		画面全体
-Delay:	ScreenshotWindow		遅延時間:
-Copy to clipboard	ScreenshotWindow		クリップボードにコピー
+Delay:	ScreenshotWindow		取得までの時間:
+Copy to clipboard	ScreenshotWindow		クリップボードへコピー
 screenshot	Screenshot	Base filename of screenshot files	スクリーンショット
 Home folder	ScreenshotWindow		ホームフォルダー
 Save	ScreenshotWindow		保存
