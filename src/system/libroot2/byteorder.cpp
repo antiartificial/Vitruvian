@@ -3,6 +3,8 @@
  * Distributed under the terms of the LGPL License.
  */
 
+#include <cstring>
+
 #include <ByteOrder.h>
 
 

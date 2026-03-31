@@ -4,6 +4,7 @@
  */
 
 
+#include <cstring>
 #include <errno.h>
 #include <string.h>
 

@@ -526,42 +526,42 @@ BString::Append(const char* string)
 inline bool
 BString::operator==(const BString& string) const
 {
-	return strcmp(String(), string.String()) == 0;
+	return __builtin_strcmp(String(), string.String()) == 0;
 }
 
 
 inline bool
 BString::operator<(const BString& string) const
 {
-	return strcmp(String(), string.String()) < 0;
+	return __builtin_strcmp(String(), string.String()) < 0;
 }
 
 
 inline bool
 BString::operator<=(const BString& string) const
 {
-	return strcmp(String(), string.String()) <= 0;
+	return __builtin_strcmp(String(), string.String()) <= 0;
 }
 
 
 inline bool
 BString::operator>=(const BString& string) const
 {
-	return strcmp(String(), string.String()) >= 0;
+	return __builtin_strcmp(String(), string.String()) >= 0;
 }
 
 
 inline bool
 BString::operator>(const BString& string) const
 {
-	return strcmp(String(), string.String()) > 0;
+	return __builtin_strcmp(String(), string.String()) > 0;
 }
 
 
 inline bool
 BString::operator!=(const BString& string) const
 {
-	return strcmp(String(), string.String()) != 0;
+	return __builtin_strcmp(String(), string.String()) != 0;
 }
 
 

@@ -20,7 +20,6 @@
 #ifndef AGG_RENDERING_BUFFER_DYNAROW_INCLUDED
 #define AGG_RENDERING_BUFFER_DYNAROW_INCLUDED
 
-#include <cstring>
 #include "agg_array.h"
 
 namespace agg

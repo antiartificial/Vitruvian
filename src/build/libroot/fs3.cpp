@@ -5,8 +5,10 @@
 
 #include <syscalls.h>
 
+#include <cstring>
 #include <dirent.h>
 #include <fcntl.h>
+#include <libgen.h>
 #include <pthread.h>
 #include <string.h>
 #include <sys/syscall.h>
@@ -622,7 +624,7 @@ _kern_read_dir(int fd, struct dirent* buffer, size_t bufferSize, uint32 maxCount
 
 	off_t seekOffset = _kern_seek(fd, 0, SEEK_CUR);
 
-	ssize_t ret = syscall(SYS_getdents, fd, direntBuffer, bufSize);
+	ssize_t ret = syscall(SYS_getdents64, fd, direntBuffer, bufSize);
 	if (ret < 0) {
 		free(direntBuffer);
 		return BKernelPrivate::posixError(errno);

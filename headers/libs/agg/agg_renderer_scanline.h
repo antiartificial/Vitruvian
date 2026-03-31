@@ -16,7 +16,6 @@
 #ifndef AGG_RENDERER_SCANLINE_INCLUDED
 #define AGG_RENDERER_SCANLINE_INCLUDED
 
-#include <cstring>
 #include "agg_basics.h"
 #include "agg_renderer_base.h"
 

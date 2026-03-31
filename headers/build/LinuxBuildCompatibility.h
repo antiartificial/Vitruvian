@@ -63,11 +63,12 @@ extern "C" {
 #endif
 
 // Is kernel-only under Linux.
+#include <sys/cdefs.h>
 #ifndef strlcpy
-extern size_t   strlcpy(char* dest, const char* source, size_t length);
+extern size_t   strlcpy(char* dest, const char* source, size_t length) __THROW;
 #endif
 #ifndef strlcat
-extern size_t	strlcat(char* dest, const char* source, size_t length);
+extern size_t	strlcat(char* dest, const char* source, size_t length) __THROW;
 #endif
 
 // BeOS only

@@ -17,7 +17,6 @@
 
 #include <stddef.h>
 #include <string.h>
-#include <cstring>
 #include "agg_basics.h"
 
 namespace agg

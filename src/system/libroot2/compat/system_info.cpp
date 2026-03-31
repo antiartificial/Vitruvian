@@ -168,12 +168,14 @@ _get_cpu_info_etc(uint32 firstCPU, uint32 cpuCount, cpu_info* info,
 	return __get_cpu_info(firstCPU, cpuCount, info);
 }
 
+#if defined(__i386__) || defined(__x86_64__)
 status_t
 get_cpuid(cpuid_info *info, uint32 eaxRegister, uint32 cpuNum)
 {
 	//return _kern_get_cpuid(info, eaxRegister, cpuNum);
 	return B_OK;
 }
+#endif
 
 
 status_t
