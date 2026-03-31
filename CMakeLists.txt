@@ -17,6 +17,8 @@ message(STATUS "Build config written to: ${CMAKE_BINARY_DIR}/buildconfig.conf")
 
 include(build/engine.cmake)
 
+option(HAVE_GBM "Enable GBM/EGL GPU-accelerated display backend" OFF)
+
 add_subdirectory(src)
 
 if(NOT BUILDTOOLS_MODE STREQUAL "1")
@@ -54,5 +56,6 @@ message(STATUS "=============================================")
 message(STATUS "Host kernel:                     ${HOST_KERNEL}")
 message(STATUS "Guest kernel:                    ${GUEST_KERNEL}")
 message(STATUS "SSH Debug:                       ${IS_DEBUG_MODE}")
+message(STATUS "HAVE_GBM:                        ${HAVE_GBM}")
 message(STATUS "=============================================")
 message(STATUS "")

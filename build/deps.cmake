@@ -133,6 +133,27 @@ DeclareDependency(
 	RUNTIMES  "libdrm2 (>= 2.4.114-1)"
 )
 
+DeclareDependency(
+	GBM
+	LIBRARIES  "gbm"
+	PACKAGES  "libgbm-dev"
+	RUNTIMES  "libgbm1 (>= 23.0)"
+)
+
+DeclareDependency(
+	EGL
+	LIBRARIES  "EGL"
+	PACKAGES  "libegl-dev"
+	RUNTIMES  "libegl1 (>= 1.5)"
+)
+
+DeclareDependency(
+	GLESV2
+	LIBRARIES  "GLESv2"
+	PACKAGES  "libgles-dev"
+	RUNTIMES  "libgles2 (>= 1.0)"
+)
+
 #DeclareDependency(
 #	ICNS
 #	LIBRARIES	"icns"

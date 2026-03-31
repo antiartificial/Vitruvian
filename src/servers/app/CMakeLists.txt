@@ -152,6 +152,29 @@ Server(
 	"./drawing/Painter/drawing_modes"
 )
 
+if(HAVE_GBM)
+	pkg_check_modules(GBM REQUIRED IMPORTED_TARGET gbm)
+	pkg_check_modules(EGL REQUIRED IMPORTED_TARGET egl)
+	pkg_check_modules(GLESV2 REQUIRED IMPORTED_TARGET glesv2)
+
+	target_sources(app_server PRIVATE
+		drawing/interface/linux/gbm/GBMHWInterface.cpp
+		drawing/interface/linux/gbm/GBMBuffer.cpp
+	)
+
+	target_include_directories(app_server PRIVATE
+		"./drawing/interface/linux/gbm"
+	)
+
+	target_link_libraries(app_server PRIVATE
+		PkgConfig::GBM
+		PkgConfig::EGL
+		PkgConfig::GLESV2
+	)
+
+	target_compile_definitions(app_server PRIVATE HAVE_GBM=1)
+endif()
+
 UsePrivateHeaders(app_server app interface graphics graphics/common kernel support)
 
 #TODO: we want a custom target_include_directories that does that:
