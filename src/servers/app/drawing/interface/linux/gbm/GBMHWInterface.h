@@ -18,7 +18,7 @@ extern "C" {
 #include "HWInterface.h"
 #include "LibInputEventStream.h"
 
-
+class GLCompositor;
 class GBMBuffer;
 
 class GBMHWInterface : public HWInterface {
@@ -78,13 +78,20 @@ private:
 
 			status_t			_SetupDrmResources();
 			status_t			_CreateBuffers();
+			status_t			_InitCompositor();
 			uint32_t			_AddFB(struct gbm_bo* bo);
+			status_t			_CompositorFlip();
+			status_t			_LegacyFlip();
 
 			int					fDrmFd;
 			struct gbm_device*	fGbmDevice;
 
 			GBMBuffer*			fFrontBuffer;
 			GBMBuffer*			fBackBuffer;
+
+			GLCompositor*		fCompositor;
+			struct gbm_bo*		fCurrentBO;
+			uint32_t			fCurrentFbId;
 
 			// DRM KMS state
 			uint32_t			fConnectorId;

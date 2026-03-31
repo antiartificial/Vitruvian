@@ -6,6 +6,7 @@
 #include "GBMHWInterface.h"
 
 #include "GBMBuffer.h"
+#include "GLCompositor.h"
 
 #include <algorithm>
 #include <errno.h>
@@ -49,6 +50,9 @@ GBMHWInterface::GBMHWInterface()
 	fGbmDevice(NULL),
 	fFrontBuffer(NULL),
 	fBackBuffer(NULL),
+	fCompositor(NULL),
+	fCurrentBO(NULL),
+	fCurrentFbId(0),
 	fConnectorId(0),
 	fCrtcId(0),
 	fSavedCrtc(NULL),
@@ -104,6 +108,14 @@ GBMHWInterface::~GBMHWInterface()
 
 	delete_sem(fSessionSem);
 
+	if (fCurrentBO != NULL) {
+		if (fCurrentFbId != 0)
+			drmModeRmFB(fDrmFd, fCurrentFbId);
+		if (fCompositor != NULL)
+			fCompositor->ReleaseFrontBuffer(fCurrentBO);
+	}
+
+	delete fCompositor;
 	delete fBackBuffer;
 	delete fFrontBuffer;
 	delete fEventStream;
@@ -229,6 +241,10 @@ GBMHWInterface::_OnSessionEnable()
 			errno);
 	}
 
+	// Try to initialize the GL compositor for GPU-accelerated scanout.
+	// Falls back to legacy page-flip path if EGL init fails.
+	_InitCompositor();
+
 	fEventStream = new LibInputEventStream(fMode.hdisplay, fMode.vdisplay,
 		fSeat);
 	fEventStream->SetSeatLock(&fSeatLock);
@@ -244,8 +260,13 @@ GBMHWInterface::_OnSessionEnable()
 	}
 	release_sem(fSessionSem);
 
-	printf("GBMHWInterface: initialized %ux%u via GBM\n",
-		fMode.hdisplay, fMode.vdisplay);
+	if (fCompositor != NULL && fCompositor->IsInitialized()) {
+		printf("GBMHWInterface: initialized %ux%u via GBM + GLES2 compositor\n",
+			fMode.hdisplay, fMode.vdisplay);
+	} else {
+		printf("GBMHWInterface: initialized %ux%u via GBM (legacy page flip)\n",
+			fMode.hdisplay, fMode.vdisplay);
+	}
 }
 
 
@@ -632,6 +653,127 @@ GBMHWInterface::CopyBackToFront(const BRect& frame)
 	if (fBackBuffer == NULL)
 		return B_UNSUPPORTED;
 
+	// Use the GL compositor path if available, otherwise legacy page flip
+	if (fCompositor != NULL && fCompositor->IsInitialized())
+		return _CompositorFlip();
+
+	return _LegacyFlip();
+}
+
+
+status_t
+GBMHWInterface::_InitCompositor()
+{
+	fCompositor = new GLCompositor();
+	status_t ret = fCompositor->Init(fGbmDevice, fMode.hdisplay,
+		fMode.vdisplay);
+	if (ret != B_OK) {
+		fprintf(stderr, "GBMHWInterface: GL compositor init failed, "
+			"using legacy page flip\n");
+		delete fCompositor;
+		fCompositor = NULL;
+		return B_ERROR;
+	}
+
+	// Do an initial eglSwapBuffers + page flip to establish the
+	// compositor's scanout chain on the CRTC.
+	fCompositor->BlitBuffer(fFrontBuffer->Bits(), fFrontBuffer->Width(),
+		fFrontBuffer->Height(), fFrontBuffer->BytesPerRow());
+
+	struct gbm_bo* bo = fCompositor->LockFrontBuffer();
+	if (bo != NULL) {
+		uint32_t fbId = _AddFB(bo);
+		if (fbId != 0) {
+			drmModeSetCrtc(fDrmFd, fCrtcId, fbId, 0, 0,
+				&fConnectorId, 1, &fMode);
+			fCurrentBO = bo;
+			fCurrentFbId = fbId;
+		} else {
+			fCompositor->ReleaseFrontBuffer(bo);
+		}
+	}
+
+	return B_OK;
+}
+
+
+status_t
+GBMHWInterface::_CompositorFlip()
+{
+	// Upload the back buffer (AGG-rendered) as a GL texture and
+	// render it to the EGL surface via the compositor.
+	status_t ret = fCompositor->BlitBuffer(fBackBuffer->Bits(),
+		fBackBuffer->Width(), fBackBuffer->Height(),
+		fBackBuffer->BytesPerRow());
+	if (ret != B_OK)
+		return ret;
+
+	// Lock the new front buffer from the gbm_surface
+	struct gbm_bo* nextBO = fCompositor->LockFrontBuffer();
+	if (nextBO == NULL) {
+		fprintf(stderr, "GBMHWInterface: lock front buffer failed\n");
+		return B_ERROR;
+	}
+
+	uint32_t nextFbId = _AddFB(nextBO);
+	if (nextFbId == 0) {
+		fCompositor->ReleaseFrontBuffer(nextBO);
+		return B_ERROR;
+	}
+
+	// Page flip to the new compositor output
+	int drmRet = drmModePageFlip(fDrmFd, fCrtcId, nextFbId,
+		DRM_MODE_PAGE_FLIP_EVENT, this);
+	if (drmRet != 0) {
+		fprintf(stderr, "GBMHWInterface: compositor page flip failed (%d): %m\n",
+			errno);
+		drmModeRmFB(fDrmFd, nextFbId);
+		fCompositor->ReleaseFrontBuffer(nextBO);
+		return B_ERROR;
+	}
+
+	// Wait for flip completion
+	drmEventContext evctx;
+	memset(&evctx, 0, sizeof(evctx));
+	evctx.version = 2;
+	evctx.page_flip_handler
+		= [](int, unsigned int, unsigned int, unsigned int, void*) {};
+
+	struct pollfd pfd;
+	pfd.fd = fDrmFd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+
+	while (true) {
+		int pr = poll(&pfd, 1, 1000);
+		if (pr > 0) {
+			drmHandleEvent(fDrmFd, &evctx);
+			break;
+		} else if (pr == 0) {
+			fprintf(stderr, "GBMHWInterface: compositor flip timeout\n");
+			break;
+		} else if (errno != EINTR) {
+			break;
+		}
+	}
+
+	// Release the previous front buffer
+	if (fCurrentBO != NULL) {
+		if (fCurrentFbId != 0)
+			drmModeRmFB(fDrmFd, fCurrentFbId);
+		fCompositor->ReleaseFrontBuffer(fCurrentBO);
+	}
+
+	fCurrentBO = nextBO;
+	fCurrentFbId = nextFbId;
+
+	return B_OK;
+}
+
+
+status_t
+GBMHWInterface::_LegacyFlip()
+{
 	int ret = drmModePageFlip(fDrmFd, fCrtcId, fBackBuffer->GetFbId(),
 		DRM_MODE_PAGE_FLIP_EVENT, this);
 	if (ret != 0) {
