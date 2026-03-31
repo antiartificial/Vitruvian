@@ -15,6 +15,7 @@
 #include <ObjectList.h>
 #include <Window.h>
 
+#include <NetworkBackend.h>
 #include <NetworkSettings.h>
 #include <NetworkSettingsAddOn.h>
 
@@ -34,7 +35,8 @@ enum {
 
 class NetworkWindow : public BWindow {
 public:
-								NetworkWindow();
+								NetworkWindow(
+									INetworkBackend* backend = NULL);
 	virtual						~NetworkWindow();
 
 			bool				QuitRequested();
@@ -87,6 +89,9 @@ private:
 			BView*				fAddOnShellView;
 
 			BButton*			fRevertButton;
+
+			INetworkBackend*	fBackend;
+			bool				fOwnsBackend;
 };
 
 

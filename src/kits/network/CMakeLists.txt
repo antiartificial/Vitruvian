@@ -19,6 +19,8 @@ target_sources(be PRIVATE
 	libnetapi/SecureSocket.cpp
 	libnetapi/Socket.cpp
 	libnetapi/SocketMessenger.cpp
+	libnetapi/MockNetworkBackend.cpp
+	libnetapi/NMNetworkBackend.cpp
 
 	libnetservices/DataRequest.cpp
 	libnetservices/FileRequest.cpp

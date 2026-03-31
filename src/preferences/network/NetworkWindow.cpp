@@ -25,6 +25,7 @@
 #include <Deskbar.h>
 #include <Directory.h>
 #include <LayoutBuilder.h>
+#include <NetworkBackend.h>
 #include <NetworkDevice.h>
 #include <NetworkInterface.h>
 #include <NetworkNotifications.h>
@@ -37,6 +38,8 @@
 #include <ScrollView.h>
 #include <StringItem.h>
 #include <SymLink.h>
+
+#include "NMNetworkBackend.h"
 
 #define ENABLE_PROFILES 0
 #if ENABLE_PROFILES
@@ -89,7 +92,7 @@ public:
 // #pragma mark -
 
 
-NetworkWindow::NetworkWindow()
+NetworkWindow::NetworkWindow(INetworkBackend* backend)
 	:
 	BWindow(BRect(100, 100, 750, 400), B_TRANSLATE_SYSTEM_NAME("Network"),
 		B_TITLED_WINDOW, B_ASYNCHRONOUS_CONTROLS | B_NOT_ZOOMABLE
@@ -97,8 +100,20 @@ NetworkWindow::NetworkWindow()
 	fServicesItem(NULL),
 	fDialUpItem(NULL),
 	fVPNItem(NULL),
-	fOtherItem(NULL)
+	fOtherItem(NULL),
+	fBackend(backend),
+	fOwnsBackend(backend == NULL)
 {
+	if (fBackend == NULL) {
+		NMNetworkBackend* nm = new NMNetworkBackend();
+		if (nm->Init() != B_OK) {
+			// NM not available -- fall back to legacy scan below
+			delete nm;
+		} else {
+			fBackend = nm;
+		}
+	}
+
 	// Profiles section
 #if ENABLE_PROFILES
 	BPopUpMenu* profilesPopup = new BPopUpMenu("<none>");
@@ -190,6 +205,9 @@ NetworkWindow::~NetworkWindow()
 {
 	stop_watching_network(this);
 	fSettings.StopMonitoring(this);
+
+	if (fOwnsBackend)
+		delete fBackend;
 }
 
 
@@ -332,7 +350,32 @@ NetworkWindow::_BuildProfilesMenu(BMenu* menu, int32 what)
 void
 NetworkWindow::_ScanInterfaces()
 {
-	// Try existing devices first
+	if (fBackend != NULL) {
+		// Use the INetworkBackend (NetworkManager or mock)
+		std::vector<network_interface_info> interfaces;
+		if (fBackend->GetInterfaces(interfaces) == B_OK) {
+			for (size_t i = 0; i < interfaces.size(); i++) {
+				const network_interface_info& info = interfaces[i];
+				BNetworkInterfaceType type = B_NETWORK_INTERFACE_TYPE_OTHER;
+				if (info.type == B_NETWORK_INTERFACE_TYPE_WIFI)
+					type = B_NETWORK_INTERFACE_TYPE_WIFI;
+				else if (info.type == B_NETWORK_INTERFACE_TYPE_ETHERNET)
+					type = B_NETWORK_INTERFACE_TYPE_ETHERNET;
+
+				InterfaceListItem* item = new InterfaceListItem(
+					info.name.c_str(), type);
+				item->SetExpanded(true);
+
+				fInterfaceItemMap.insert(
+					std::pair<BString, InterfaceListItem*>(
+						BString(info.name.c_str()), item));
+				fListView->AddItem(item);
+			}
+		}
+		return;
+	}
+
+	// Legacy path: direct Haiku network kit APIs
 	BNetworkRoster& roster = BNetworkRoster::Default();
 	BNetworkInterface interface;
 	uint32 cookie = 0;

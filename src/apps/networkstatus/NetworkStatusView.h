@@ -14,6 +14,8 @@
 #include <ObjectList.h>
 #include <View.h>
 
+#include <NetworkBackend.h>
+
 #include <map>
 
 
@@ -66,6 +68,9 @@ class NetworkStatusView : public BView {
 		bool			fInDeskbar;
 		BBitmap*		fTrayIcons[kStatusCount];
 		BBitmap*		fNotifyIcons[kStatusCount];
+
+		INetworkBackend*
+						fBackend;
 };
 
 #endif	// NETWORK_STATUS_VIEW_H

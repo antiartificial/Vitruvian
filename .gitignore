@@ -9,3 +9,4 @@ src/tests/kits/net/network_backend/test_network_backend
 harness/signals/*
 !harness/signals/.gitkeep
 hostkernelversion.conf
+*.dSYM/

@@ -82,7 +82,8 @@ NetworkStatusView::NetworkStatusView(BRect frame, int32 resizingMode,
 		bool inDeskbar)
 	: BView(frame, kDeskbarItemName, resizingMode,
 		B_WILL_DRAW | B_TRANSPARENT_BACKGROUND | B_FRAME_EVENTS),
-	fInDeskbar(inDeskbar)
+	fInDeskbar(inDeskbar),
+	fBackend(NULL)
 {
 	_Init();
 
@@ -101,7 +102,8 @@ NetworkStatusView::NetworkStatusView(BRect frame, int32 resizingMode,
 
 NetworkStatusView::NetworkStatusView(BMessage* archive)
 	: BView(archive),
-	fInDeskbar(false)
+	fInDeskbar(false),
+	fBackend(NULL)
 {
 	app_info info;
 	if (be_app->GetAppInfo(&info) == B_OK
@@ -516,49 +518,104 @@ NetworkStatusView::_DetermineInterfaceStatus(
 }
 
 
+static int32
+_MapBackendState(network_connection_state state)
+{
+	switch (state) {
+		case B_NETWORK_STATE_CONNECTED:		return kStatusReady;
+		case B_NETWORK_STATE_CONNECTING:	return kStatusConnecting;
+		case B_NETWORK_STATE_LINK_NO_CONFIG:return kStatusLinkNoConfig;
+		case B_NETWORK_STATE_NO_LINK:		return kStatusNoLink;
+		default:							return kStatusUnknown;
+	}
+}
+
+
 void
 NetworkStatusView::_Update(bool force)
 {
-	BNetworkRoster& roster = BNetworkRoster::Default();
-	BNetworkInterface interface;
-	uint32 cookie = 0;
 	std::set<BString> currentInterfaces;
 
-	while (roster.GetNextInterface(&cookie, interface) == B_OK) {
-		if ((interface.Flags() & IFF_LOOPBACK) == 0) {
-			currentInterfaces.insert((BString)interface.Name());
-			int32 oldStatus = kStatusUnknown;
-			if (fInterfaceStatuses.find(interface.Name())
-				!= fInterfaceStatuses.end()) {
-				oldStatus = fInterfaceStatuses[interface.Name()];
-			}
-			int32 status = _DetermineInterfaceStatus(interface);
-			if (oldStatus != status) {
-				BNotification notification(B_INFORMATION_NOTIFICATION);
-				notification.SetGroup(B_TRANSLATE("Network Status"));
-				notification.SetTitle(interface.Name());
-				notification.SetMessageID(interface.Name());
-				notification.SetIcon(fNotifyIcons[status]);
-				if (status == kStatusConnecting
-					|| (status == kStatusReady
-						&& oldStatus == kStatusConnecting)
-					|| (status == kStatusNoLink
-						&& oldStatus == kStatusReady)
-					|| (status == kStatusNoLink
-						&& oldStatus == kStatusConnecting)) {
-					// A significant state change, raise notification.
-					notification.SetContent(kStatusDescriptions[status]);
-					notification.Send();
+	if (fBackend != NULL) {
+		// Use INetworkBackend (NetworkManager or mock)
+		std::vector<network_interface_info> interfaces;
+		if (fBackend->GetInterfaces(interfaces) == B_OK) {
+			for (size_t i = 0; i < interfaces.size(); i++) {
+				const network_interface_info& info = interfaces[i];
+				if (info.type == B_NETWORK_INTERFACE_TYPE_LOOPBACK)
+					continue;
+
+				BString name(info.name.c_str());
+				currentInterfaces.insert(name);
+
+				int32 oldStatus = kStatusUnknown;
+				if (fInterfaceStatuses.find(name)
+						!= fInterfaceStatuses.end())
+					oldStatus = fInterfaceStatuses[name];
+
+				int32 status = _MapBackendState(info.state);
+				if (oldStatus != status) {
+					BNotification notification(B_INFORMATION_NOTIFICATION);
+					notification.SetGroup(B_TRANSLATE("Network Status"));
+					notification.SetTitle(name);
+					notification.SetMessageID(name);
+					notification.SetIcon(fNotifyIcons[status]);
+					if (status == kStatusConnecting
+						|| (status == kStatusReady
+							&& oldStatus == kStatusConnecting)
+						|| (status == kStatusNoLink
+							&& oldStatus == kStatusReady)
+						|| (status == kStatusNoLink
+							&& oldStatus == kStatusConnecting)) {
+						notification.SetContent(
+							kStatusDescriptions[status]);
+						notification.Send();
+					}
+					Invalidate();
 				}
-				Invalidate();
+				fInterfaceStatuses[name] = status;
 			}
-			fInterfaceStatuses[interface.Name()] = status;
+		}
+	} else {
+		// Legacy path: direct Haiku network kit APIs
+		BNetworkRoster& roster = BNetworkRoster::Default();
+		BNetworkInterface interface;
+		uint32 cookie = 0;
+
+		while (roster.GetNextInterface(&cookie, interface) == B_OK) {
+			if ((interface.Flags() & IFF_LOOPBACK) == 0) {
+				currentInterfaces.insert((BString)interface.Name());
+				int32 oldStatus = kStatusUnknown;
+				if (fInterfaceStatuses.find(interface.Name())
+					!= fInterfaceStatuses.end()) {
+					oldStatus = fInterfaceStatuses[interface.Name()];
+				}
+				int32 status = _DetermineInterfaceStatus(interface);
+				if (oldStatus != status) {
+					BNotification notification(B_INFORMATION_NOTIFICATION);
+					notification.SetGroup(B_TRANSLATE("Network Status"));
+					notification.SetTitle(interface.Name());
+					notification.SetMessageID(interface.Name());
+					notification.SetIcon(fNotifyIcons[status]);
+					if (status == kStatusConnecting
+						|| (status == kStatusReady
+							&& oldStatus == kStatusConnecting)
+						|| (status == kStatusNoLink
+							&& oldStatus == kStatusReady)
+						|| (status == kStatusNoLink
+							&& oldStatus == kStatusConnecting)) {
+						notification.SetContent(
+							kStatusDescriptions[status]);
+						notification.Send();
+					}
+					Invalidate();
+				}
+				fInterfaceStatuses[interface.Name()] = status;
+			}
 		}
 	}
 
-	// Check every element in fInterfaceStatuses against our current interface
-	// list. If it's not there, then the interface is not present anymore and
-	// should be removed from fInterfaceStatuses.
+	// Remove interfaces that have disappeared
 	std::map<BString, int32>::iterator it = fInterfaceStatuses.begin();
 	while (it != fInterfaceStatuses.end()) {
 		std::map<BString, int32>::iterator backupIt = it;
