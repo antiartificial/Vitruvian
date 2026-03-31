@@ -160,6 +160,7 @@ if(HAVE_GBM)
 	target_sources(app_server PRIVATE
 		drawing/interface/linux/gbm/GBMHWInterface.cpp
 		drawing/interface/linux/gbm/GBMBuffer.cpp
+		drawing/interface/linux/gbm/GBMArea.cpp
 	)
 
 	target_include_directories(app_server PRIVATE
