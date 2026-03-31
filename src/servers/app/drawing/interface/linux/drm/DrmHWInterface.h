@@ -14,7 +14,6 @@ extern "C" {
 #include <OS.h>
 #include <Locker.h>
 
-#include "DrmBuffer.h"
 #include "HWInterface.h"
 #include "LibInputEventStream.h"
 #include "TTy.h"
@@ -28,6 +27,7 @@ extern "C" {
 
 
 class DrmBuffer;
+class RenderingBuffer;
 
 class DrmHWInterface : public HWInterface {
 public:
@@ -86,6 +86,8 @@ private:
 
 			DrmBuffer*			fFrontBuffer;
 			DrmBuffer*			fBackBuffer;
+
+			uint32_t			fCrtcId;
 
 			display_mode		fDisplayMode;
 

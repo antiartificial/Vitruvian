@@ -7,7 +7,12 @@
 
 #include "DrmBuffer.h"
 
+#include <algorithm>
+#include <errno.h>
 #include <poll.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/ioctl.h>
 #include <time.h>
 
 #include <Autolock.h>
@@ -53,7 +58,8 @@ DrmHWInterface::DrmHWInterface()
 	fEventThread(-1),
 	fSessionLock("drm session lock"),
 	fSessionSem(create_sem(0, "drm session sem")),
-	fSeatLock("drm seat lock")
+	fSeatLock("drm seat lock"),
+	fCrtcId(0)
 {
 	fSeat = libseat_open_seat(&seat_listener, this);
 	if (!fSeat) {
@@ -109,9 +115,9 @@ DrmHWInterface::_OnSessionEnable()
 	for (int i = 0; i <= 9; ++i) {
 		snprintf(path, sizeof(path), "/dev/dri/card%d", i);
 		fDeviceId = libseat_open_device(fSeat, path, &fFd);
-		if (fDeviceId < 0)
-			continue;
-    }
+		if (fDeviceId >= 0)
+			break;
+	}
 
 	if (fFd < 0) {
 		fprintf(stderr, "Failed to open DRM device via libseat\n");
@@ -125,21 +131,40 @@ DrmHWInterface::_OnSessionEnable()
 		return;
 	}
 
-	struct modeset_dev *iter;
-	for (iter = get_dev(); iter; iter = iter->next) {
-		iter->saved_crtc = drmModeGetCrtc(fFd, iter->crtc);
-		ret = drmModeSetCrtc(fFd, iter->crtc, iter->fb, 0, 0,
-					 &iter->conn, 1, &iter->mode);
-		if (ret) {
-			fprintf(stderr, "cannot set CRTC for connector %u (%d): %m\n",
-				iter->conn, errno);
-		}
+	struct modeset_dev *dev = get_dev();
+	if (!dev) {
+		fprintf(stderr, "no modeset device available\n");
+		return;
 	}
 
-	fFrontBuffer = new DrmBuffer(fFd, get_dev());
-	#ifdef DRM_BACK_BUFFER
-	fBackBuffer = new DrmBuffer(fFd, get_dev());
-	#endif
+	dev->saved_crtc = drmModeGetCrtc(fFd, dev->crtc);
+	fCrtcId = dev->crtc;
+
+	fFrontBuffer = new DrmBuffer(fFd, dev->width, dev->height);
+	fBackBuffer = new DrmBuffer(fFd, dev->width, dev->height);
+
+	if (fFrontBuffer->InitCheck() != B_OK) {
+		fprintf(stderr, "cannot initialize front buffer\n");
+		delete fFrontBuffer;
+		delete fBackBuffer;
+		fFrontBuffer = NULL;
+		fBackBuffer = NULL;
+		return;
+	}
+
+	if (fBackBuffer->InitCheck() != B_OK) {
+		fprintf(stderr, "cannot initialize back buffer, "
+			"falling back to single-buffered\n");
+		delete fBackBuffer;
+		fBackBuffer = NULL;
+	}
+
+	ret = drmModeSetCrtc(fFd, fCrtcId, fFrontBuffer->GetFbId(), 0, 0,
+				 &dev->conn, 1, &dev->mode);
+	if (ret) {
+		fprintf(stderr, "cannot set CRTC for connector %u (%d): %m\n",
+			dev->conn, errno);
+	}
 
 	fEventStream = new LibInputEventStream(get_dev()->width, get_dev()->height, fSeat);
 	fEventStream->SetSeatLock(&fSeatLock);
@@ -178,17 +203,15 @@ DrmHWInterface::_OnSessionDisable()
 void
 DrmHWInterface::_RestoreDisplay()
 {
-
-	if (fFd < 0) {
-	
+	if (fFd < 0 || fFrontBuffer == NULL)
 		return;
-	}
 
-	struct modeset_dev *iter;
-	for (iter = get_dev(); iter; iter = iter->next) {
-		drmModeSetCrtc(fFd, iter->crtc, iter->fb, 0, 0,
-					 &iter->conn, 1, &iter->mode);
-	}
+	struct modeset_dev *dev = get_dev();
+	if (!dev)
+		return;
+
+	drmModeSetCrtc(fFd, fCrtcId, fFrontBuffer->GetFbId(), 0, 0,
+		&dev->conn, 1, &dev->mode);
 }
 
 
@@ -263,6 +286,7 @@ DrmHWInterface::~DrmHWInterface()
 
 	modeset_cleanup(fFd);
 
+	delete fBackBuffer;
 	delete fFrontBuffer;
 	delete fEventStream;
 }
@@ -386,77 +410,24 @@ DrmHWInterface::RetraceSemaphore()
 status_t
 DrmHWInterface::WaitForRetrace(bigtime_t timeout)
 {
-#ifdef DRM_BACK_BUFFER
 	CALLED();
 
-	if (fFd < 0)
-		return B_ERROR;
+	if (fFd < 0 || fBackBuffer == NULL)
+		return B_UNSUPPORTED;
 
 	// TODO we should check if the session is active to avoid having
 	// someone stuck on this.
 
+	// Wait for the next vblank event using DRM_IOCTL_WAIT_VBLANK.
 	struct drm_wait_vblank wait;
 	memset(&wait, 0, sizeof(wait));
-	wait.request.type = DRM_VBLANK_RELATIVE | DRM_VBLANK_EVENT;
+	wait.request.type = DRM_VBLANK_RELATIVE;
 	wait.request.sequence = 1;
 
 	if (ioctl(fFd, DRM_IOCTL_WAIT_VBLANK, &wait) < 0)
 		return B_ERROR;
 
-	struct pollfd pollFd;
-	pollFd.fd = fFd;
-	pollFd.events = POLLIN | POLLPRI;
-	pollFd.revents = 0;
-
-	bool infinite = (timeout < 0);
-	bigtime_t start_us = 0;
-	if (!infinite)
-		start_us = system_time();
-
-	for (;;) {
-		int timeout_ms;
-		if (infinite) {
-			timeout_ms = -1;
-		} else {
-			int64_t elapsed_us = (int64_t)(system_time() - start_us);
-			int64_t rem_us = (int64_t)timeout - elapsed_us;
-			if (rem_us <= 0) {
-				return B_TIMED_OUT;
-			}
-			timeout_ms = static_cast<int>((rem_us + 999) / 1000);
-		}
-
-		int ret = poll(&pollFd, 1, timeout_ms);
-		if (ret > 0) {
-			drmEventContext evctx;
-			memset(&evctx, 0, sizeof(evctx));
-			evctx.version = 2;
-			evctx.vblank_handler
-				= [](int, unsigned int, unsigned int, unsigned int, void*) {};
-
-			if (drmHandleEvent(fFd, &evctx) < 0)
-				return B_ERROR;
-
-			return B_OK;
-		} else if (ret == 0) {
-			if (infinite)
-				continue;
-			int64_t elapsed_us = (int64_t)(system_time() - start_us);
-			if (elapsed_us >= (int64_t)timeout)
-				return B_TIMED_OUT;
-
-			continue;
-		} else {
-			if (errno == EINTR)
-				continue;
-			return B_ERROR;
-		}
-	}
-
-	return B_ERROR;
-#endif
-	UNIMPLEMENTED();
-	return B_UNSUPPORTED;
+	return B_OK;
 }
 
 
@@ -512,11 +483,7 @@ RenderingBuffer*
 DrmHWInterface::BackBuffer() const
 {
 	CALLED();
-	#ifdef DRM_BACK_BUFFER
 	return fBackBuffer;
-	#else
-	return NULL;
-	#endif
 }
 
 
@@ -530,16 +497,43 @@ DrmHWInterface::IsDoubleBuffered() const
 status_t
 DrmHWInterface::CopyBackToFront(const BRect& frame)
 {
-	#ifdef DRM_BACK_BUFFER
-    //memcpy(fFrontBuffer->Bits(), fBackBuffer->Bits(),
-    //       fFrontBuffer->BitsLength());
+	if (fBackBuffer == NULL)
+		return B_UNSUPPORTED;
 
-    drmModePageFlip(fFd, crtc, fBackBuffer->GetFbId(),
-                    DRM_MODE_PAGE_FLIP_EVENT, this);
-    std::swap(fFrontBuffer, fBackBuffer);
+	int ret = drmModePageFlip(fFd, fCrtcId, fBackBuffer->GetFbId(),
+		DRM_MODE_PAGE_FLIP_EVENT, this);
+	if (ret != 0) {
+		fprintf(stderr, "page flip failed (%d): %m\n", errno);
+		return B_ERROR;
+	}
 
-    return B_OK;
-    #else
-	return B_UNSUPPORTED;
-	#endif
+	// Wait for the page flip to complete before swapping pointers.
+	// Without this, the next flip would get EBUSY and drawing into
+	// the "back" buffer could corrupt the buffer still being scanned out.
+	drmEventContext evctx;
+	memset(&evctx, 0, sizeof(evctx));
+	evctx.version = 2;
+	evctx.page_flip_handler
+		= [](int, unsigned int, unsigned int, unsigned int, void*) {};
+
+	struct pollfd pfd;
+	pfd.fd = fFd;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
+
+	while (true) {
+		int pr = poll(&pfd, 1, 1000);
+		if (pr > 0) {
+			drmHandleEvent(fFd, &evctx);
+			break;
+		} else if (pr == 0) {
+			fprintf(stderr, "page flip completion timeout\n");
+			break;
+		} else if (errno != EINTR) {
+			break;
+		}
+	}
+
+	std::swap(fFrontBuffer, fBackBuffer);
+	return B_OK;
 }
