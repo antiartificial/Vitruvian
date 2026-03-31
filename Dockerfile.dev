@@ -1,0 +1,47 @@
+# Vitruvian OS — development container
+# Debian Trixie, mirrors the chroot used by setupenv.sh / CI.
+# Does NOT include live-boot / grub / ISO tools — build + test only.
+
+FROM debian:trixie-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TERM=xterm-256color
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Core build toolchain
+    bison build-essential cmake ninja-build git \
+    flex pkg-config \
+    # C/C++ runtime headers
+    libc6-dev \
+    # Vitruvian library dependencies (mirrors deps.cmake DeclareDependency list)
+    libfreetype6-dev \
+    libicu-dev \
+    libdrm-dev \
+    libinput-dev \
+    libevdev-dev \
+    libseat-dev \
+    libudev-dev \
+    zlib1g-dev \
+    libgif-dev \
+    libblkid-dev \
+    libfl-dev \
+    libncurses-dev \
+    # Debug-build dependency
+    libbacktrace-dev \
+    # Extended-attribute support for storage kit tests
+    attr \
+    # Utilities used by scripts
+    curl procps jq \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build workspace layout (see harness/build.sh for rationale):
+#   /workspace/src/            ← bind-mounted Vitruvian source (host)
+#   /workspace/ws/buildtools/  ← buildtools cmake build   (named volume)
+#   /workspace/ws/generated/   ← main cmake build          (named volume)
+#   /workspace/signals/        ← bind-mounted harness/signals/ (host, writable)
+WORKDIR /workspace
+
+# Copy a minimal entrypoint so `docker compose run` works ergonomically.
+COPY harness/build.sh /usr/local/bin/vos-build
+COPY harness/runsuite-json.sh /usr/local/bin/vos-test
+RUN chmod +x /usr/local/bin/vos-build /usr/local/bin/vos-test

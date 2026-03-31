@@ -1,0 +1,72 @@
+name: vitruvian-dev
+
+services:
+
+  # --- build -----------------------------------------------------------
+  # Run: docker compose run --rm build
+  # Compiles buildtools (once, cached in named volume) then the main tree.
+  build:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: vitruvian-dev
+    volumes:
+      - type: bind
+        source: .
+        target: /workspace/src
+        read_only: true
+      - type: volume
+        source: vitruvian-build
+        target: /workspace/ws
+      - type: bind
+        source: ./harness/signals
+        target: /workspace/signals
+    environment:
+      VOS_BUILD_TYPE: ${VOS_BUILD_TYPE:-Debug}
+    command: vos-build
+
+  # --- test ------------------------------------------------------------
+  # Run: docker compose run --rm test
+  # Assumes a build has already been done; skips straight to the test suite.
+  test:
+    image: vitruvian-dev
+    depends_on:
+      - build
+    volumes:
+      - type: bind
+        source: .
+        target: /workspace/src
+        read_only: true
+      - type: volume
+        source: vitruvian-build
+        target: /workspace/ws
+      - type: bind
+        source: ./harness/signals
+        target: /workspace/signals
+    environment:
+      VOS_SUITE: ${VOS_SUITE:-both}      # system | beapi | both
+      VOS_TIMEOUT: ${VOS_TIMEOUT:-120}
+    command: vos-test
+
+  # --- shell -----------------------------------------------------------
+  # Run: docker compose run --rm shell
+  # Interactive Bash session inside the build environment.
+  shell:
+    image: vitruvian-dev
+    volumes:
+      - type: bind
+        source: .
+        target: /workspace/src
+      - type: volume
+        source: vitruvian-build
+        target: /workspace/ws
+      - type: bind
+        source: ./harness/signals
+        target: /workspace/signals
+    entrypoint: /bin/bash
+    stdin_open: true
+    tty: true
+
+volumes:
+  vitruvian-build:
+    name: vitruvian-build

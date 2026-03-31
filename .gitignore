@@ -1,6 +1,11 @@
 Jamfile
-Makefile
 Makefile.in
 .*.sw*
+.factory/
 *.out
 generated*
+src/tests/kits/net/network_backend/test_network_backend
+# Harness runtime output (per-run signals, logs, VM pid)
+harness/signals/*
+!harness/signals/.gitkeep
+hostkernelversion.conf
