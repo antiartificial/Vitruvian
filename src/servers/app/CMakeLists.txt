@@ -161,6 +161,7 @@ if(HAVE_GBM)
 		drawing/interface/linux/gbm/GBMHWInterface.cpp
 		drawing/interface/linux/gbm/GBMBuffer.cpp
 		drawing/interface/linux/gbm/GBMArea.cpp
+		drawing/interface/linux/gbm/GLCompositor.cpp
 	)
 
 	target_include_directories(app_server PRIVATE
